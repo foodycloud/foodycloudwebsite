@@ -3,6 +3,7 @@ import Credentials from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { authConfig } from '@/lib/auth.config'
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -10,7 +11,7 @@ const loginSchema = z.object({
 })
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'foodycloud2026secretkey32charsmin',
+  ...authConfig,
   providers: [
     Credentials({
       credentials: {
@@ -37,11 +38,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  pages: {
-    signIn: '/admin/login',
-  },
-  session: { strategy: 'jwt' },
   callbacks: {
+    ...authConfig.callbacks,
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
