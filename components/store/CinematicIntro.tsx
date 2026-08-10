@@ -171,7 +171,7 @@ export default function CinematicIntro() {
           <div className="relative z-20 text-center px-4 max-w-lg space-y-3">
             <span className="text-[10px] uppercase tracking-[0.3em] text-amber-400 font-bold">
               Our Food philosophy
-            </h2>
+            </span>
             <p className="font-display text-3xl sm:text-4xl text-white font-bold leading-tight">
               Pure vegetarian meals crafted with absolute care.
             </p>
@@ -195,7 +195,7 @@ export default function CinematicIntro() {
           <div className="relative z-20 text-center px-4 max-w-lg space-y-4">
             <span className="text-[10px] uppercase tracking-[0.3em] text-amber-400 font-bold">
               Fresh Daily
-            </h2>
+            </span>
             <p className="font-display text-3xl sm:text-4xl text-white font-bold leading-tight">
               Prepared in small batches to ensure that authentic homely taste.
             </p>
