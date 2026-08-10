@@ -75,37 +75,41 @@ export default function CinematicIntro() {
       }`}
     >
       {/* Cinematic styles injection */}
-      <style jsx global>{`
-        html.intro-active, html.intro-active body {
-          overflow: hidden !important;
-          height: 100% !important;
-          position: fixed !important;
-          width: 100% !important;
-        }
-        
-        .ease-out-expo {
-          transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        
-        @keyframes kenburns {
-          0% { transform: scale(1.05) translate(0, 0); }
-          100% { transform: scale(1.15) translate(-1%, -1%); }
-        }
-        
-        .animate-kenburns {
-          animation: kenburns 4.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite alternate;
-        }
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            html.intro-active, html.intro-active body {
+              overflow: hidden !important;
+              height: 100% !important;
+              position: fixed !important;
+              width: 100% !important;
+            }
+            
+            .ease-out-expo {
+              transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            
+            @keyframes kenburns {
+              0% { transform: scale(1.05) translate(0, 0); }
+              100% { transform: scale(1.15) translate(-1%, -1%); }
+            }
+            
+            .animate-kenburns {
+              animation: kenburns 4.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite alternate;
+            }
 
-        @keyframes shimmer-line {
-          0% { transform: scaleX(0); opacity: 0; }
-          50% { transform: scaleX(1); opacity: 0.8; }
-          100% { transform: scaleX(0); opacity: 0; }
-        }
+            @keyframes shimmer-line {
+              0% { transform: scaleX(0); opacity: 0; }
+              50% { transform: scaleX(1); opacity: 0.8; }
+              100% { transform: scaleX(0); opacity: 0; }
+            }
 
-        .animate-shimmer-line {
-          animation: shimmer-line 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
-        }
-      `}</style>
+            .animate-shimmer-line {
+              animation: shimmer-line 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+            }
+          `
+        }}
+      />
 
       {/* Subtle Skip Control */}
       <button
