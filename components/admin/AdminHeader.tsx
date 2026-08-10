@@ -4,7 +4,7 @@ import { signOut } from 'next-auth/react'
 import { LogOut, User } from 'lucide-react'
 
 interface AdminHeaderProps {
-  user: { name?: string | null; email?: string | null }
+  user?: { name?: string | null; email?: string | null }
 }
 
 export default function AdminHeader({ user }: AdminHeaderProps) {
