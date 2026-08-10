@@ -1,18 +1,18 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import Image from 'next/image'
-import { Search, SlidersHorizontal, X } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
-import AddToCartButton from './AddToCartButton'
+import AddToCartButton from '@/components/store/AddToCartButton'
 
-interface Food {
+type Food = {
   id: string
   name: string
   slug: string
   description: string | null
-  price: { toString(): string }
-  discountPrice: { toString(): string } | null
+  price: number
+  discountPrice: number | null
   imageUrl: string | null
   isAvailable: boolean
   isVeg: boolean
@@ -20,129 +20,96 @@ interface Food {
   isPopular: boolean
 }
 
-interface Category {
+type Category = {
   id: string
   name: string
   slug: string
   foods: Food[]
 }
 
-interface MenuClientProps {
+type Props = {
   categories: Category[]
   isOpen: boolean
-  acceptingOrders: boolean
   closedMessage: string | null
 }
 
-export default function MenuClient({ categories, isOpen, acceptingOrders, closedMessage }: MenuClientProps) {
-  const [search, setSearch] = useState('')
-  const [activeCategory, setActiveCategory] = useState(categories[0]?.slug || '')
+export default function MenuClient({ categories, isOpen, closedMessage }: Props) {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeCategory, setActiveCategory] = useState<string>('all')
   const [showPopularOnly, setShowPopularOnly] = useState(false)
-  const sectionRefs = useRef<Record<string, HTMLElement | null>>({})
 
-  const canOrder = isOpen && acceptingOrders
-  const totalItems = categories.reduce((sum, cat) => sum + cat.foods.length, 0)
-
+  // Filter foods based on active category, search query, and popular toggle
   const filteredCategories = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    return categories
-      .map((cat) => ({
-        ...cat,
-        foods: cat.foods.filter((food) => {
-          const matchesSearch = !query || food.name.toLowerCase().includes(query) || food.description?.toLowerCase().includes(query)
-          const matchesPopular = !showPopularOnly || food.isPopular
-          return matchesSearch && matchesPopular
-        }),
-      }))
-      .filter((cat) => cat.foods.length > 0 || (!query && !showPopularOnly))
-  }, [categories, search, showPopularOnly])
-
-  function scrollToCategory(slug: string) {
-    const el = sectionRefs.current[slug]
-    if (el) {
-      const offset = 158
-      const top = el.getBoundingClientRect().top + window.scrollY - offset
-      window.scrollTo({ top, behavior: 'smooth' })
-    }
-    setActiveCategory(slug)
-  }
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) setActiveCategory(entry.target.id)
-        }
-      },
-      { rootMargin: '-30% 0px -60% 0px', threshold: 0 },
-    )
-    Object.values(sectionRefs.current).forEach((el) => {
-      if (el) observer.observe(el)
+    return categories.map(category => {
+      const filteredFoods = category.foods.filter(food => {
+        const matchesSearch = food.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                              (food.description && food.description.toLowerCase().includes(searchQuery.toLowerCase()))
+        const matchesPopular = showPopularOnly ? food.isPopular : true
+        return matchesSearch && matchesPopular
+      })
+      return { ...category, foods: filteredFoods }
+    }).filter(category => {
+      if (activeCategory !== 'all' && category.id !== activeCategory) return false
+      return category.foods.length > 0
     })
-    return () => observer.disconnect()
-  }, [categories])
+  }, [categories, searchQuery, activeCategory, showPopularOnly])
+
+  const totalFilteredFoods = filteredCategories.reduce((acc, cat) => acc + cat.foods.length, 0)
 
   return (
-    <div>
-      {!canOrder && (
-        <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-semibold text-amber-900">
-          {closedMessage || 'Orders are paused right now. The menu is open for browsing.'}
+    <div className="min-h-screen bg-[#fbf8f1] pt-[72px]">
+      {!isOpen && (
+        <div className="bg-amber-100 text-amber-900 px-4 py-3 text-center text-sm font-medium border-b border-amber-200">
+          {closedMessage || "We are currently closed for orders."}
         </div>
       )}
 
-      <section className="container-page py-8 md:py-10">
-        <div className="grid gap-6 lg:grid-cols-[0.75fr_0.25fr] lg:items-end">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">Foody Cloud menu</p>
-            <h1 className="mt-2 font-display text-4xl font-bold text-stone-950 md:text-5xl">Choose your meal</h1>
-            <p className="mt-3 max-w-2xl text-base leading-7 text-stone-600">
-              Search, browse by category, add items to cart, then send the order details on WhatsApp for prepaid confirmation.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-stone-200 bg-white p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-stone-400">Available now</p>
-            <p className="mt-1 font-display text-3xl font-bold text-stone-950">{totalItems}</p>
-            <p className="text-sm text-stone-500">pure veg items</p>
-          </div>
-        </div>
-      </section>
-
-      <div className="sticky top-[72px] z-30 border-y border-stone-200 bg-[#fffaf1]/95 backdrop-blur-xl">
-        <div className="container-page py-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+      {/* Sticky Filter Bar */}
+      <div className="sticky top-[72px] z-30 bg-[#fbf8f1]/95 backdrop-blur-xl border-b border-stone-200 shadow-sm py-4">
+        <div className="container-page flex flex-col gap-4">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
               <input
                 type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search dishes, ingredients, categories..."
-                className="focus-ring h-12 w-full rounded-full border border-stone-200 bg-white pl-11 pr-11 text-sm font-medium text-stone-900 shadow-sm placeholder:text-stone-400"
+                placeholder="Search dishes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-2.5 rounded-full border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-sm"
               />
-              {search && (
-                <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700" aria-label="Clear search">
-                  <X className="h-4 w-4" />
-                </button>
-              )}
             </div>
             <button
-              onClick={() => setShowPopularOnly((value) => !value)}
-              className={`focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-full px-5 text-sm font-bold transition ${
-                showPopularOnly ? 'bg-stone-950 text-white' : 'border border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+              onClick={() => setShowPopularOnly(!showPopularOnly)}
+              className={`px-4 py-2.5 rounded-full text-sm font-medium border transition-all ${
+                showPopularOnly 
+                  ? 'bg-amber-600 text-white border-amber-600 shadow-sm' 
+                  : 'bg-white text-stone-600 border-stone-300 hover:bg-stone-50'
               }`}
             >
-              <SlidersHorizontal className="h-4 w-4" />
-              Popular
+              Popular ✨
             </button>
           </div>
 
-          <div className="scrollbar-hide mt-4 flex gap-2 overflow-x-auto">
+          {/* Category Scroller */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+            <button
+              onClick={() => setActiveCategory('all')}
+              className={`whitespace-nowrap px-5 py-2 rounded-full text-sm font-medium transition-all ${
+                activeCategory === 'all'
+                  ? 'bg-stone-900 text-white shadow-sm'
+                  : 'bg-white text-stone-600 border border-stone-200 hover:border-stone-300'
+              }`}
+            >
+              All Menu
+            </button>
             {categories.map((cat) => (
               <button
-                key={cat.slug}
-                onClick={() => scrollToCategory(cat.slug)}
-                className={`focus-ring whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold transition ${
-                  activeCategory === cat.slug ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-stone-600 hover:bg-stone-100 hover:text-stone-950'
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`whitespace-nowrap px-5 py-2 rounded-full text-sm font-medium transition-all ${
+                  activeCategory === cat.id
+                    ? 'bg-stone-900 text-white shadow-sm'
+                    : 'bg-white text-stone-600 border border-stone-200 hover:border-stone-300'
                 }`}
               >
                 {cat.name}
@@ -152,80 +119,111 @@ export default function MenuClient({ categories, isOpen, acceptingOrders, closed
         </div>
       </div>
 
-      <div className="container-page pb-16 pt-4">
-        {filteredCategories.map((cat) => (
-          <section
-            key={cat.slug}
-            id={cat.slug}
-            ref={(el) => {
-              sectionRefs.current[cat.slug] = el
-            }}
-            className="scroll-mt-44 py-7"
-          >
-            <div className="mb-4 flex items-end justify-between gap-4 border-b border-stone-200 pb-3">
-              <div>
-                <h2 className="font-display text-3xl font-bold text-stone-950">{cat.name}</h2>
-                <p className="text-sm text-stone-500">{cat.foods.length} items</p>
-              </div>
+      <div className="container-page py-10">
+        {totalFilteredFoods === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center text-4xl shadow-sm mb-6 border border-stone-200">
+              🔍
             </div>
+            <h2 className="font-display text-2xl font-bold text-stone-950 mb-2">No dishes found</h2>
+            <p className="text-stone-500 mb-6 max-w-sm">We couldn't find any dishes matching your filters. Try clearing them to see more.</p>
+            <button 
+              onClick={() => { setSearchQuery(''); setShowPopularOnly(false); setActiveCategory('all'); }}
+              className="btn-primary px-6 py-2.5 rounded-full"
+            >
+              Clear Filters
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-12">
+            {filteredCategories.map(category => (
+              <section key={category.id} id={category.slug} className="scroll-mt-40">
+                <div className="flex items-center gap-4 mb-6">
+                  <h2 className="font-display text-2xl md:text-3xl font-bold text-stone-950">
+                    {category.name}
+                  </h2>
+                  <span className="px-3 py-1 bg-stone-200/50 text-stone-600 text-xs font-bold rounded-full">
+                    {category.foods.length}
+                  </span>
+                  <div className="flex-1 h-px bg-stone-200 ml-2"></div>
+                </div>
 
-            {cat.foods.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-stone-300 bg-white/60 p-6 text-sm text-stone-500">No active items in this category yet.</p>
-            ) : (
-              <div className="grid gap-3 lg:grid-cols-2">
-                {cat.foods.map((food) => (
-                  <MenuFoodRow key={food.id} food={food} canOrder={canOrder} categoryName={cat.name} />
-                ))}
-              </div>
-            )}
-          </section>
-        ))}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                  {category.foods.map(food => (
+                    <article 
+                      key={food.id}
+                      className={`group flex bg-white rounded-2xl border border-stone-200 overflow-hidden hover:border-amber-300 hover:shadow-md transition-all duration-300 ${!food.isAvailable ? 'opacity-60 grayscale-[0.2]' : ''}`}
+                    >
+                      {/* Image Side */}
+                      <div className="relative w-[120px] sm:w-[160px] shrink-0 bg-stone-50">
+                        {food.imageUrl ? (
+                          <Image
+                            src={food.imageUrl}
+                            alt={food.name}
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            sizes="(max-width: 640px) 120px, 160px"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-gradient-to-br from-amber-100 to-amber-50 flex items-center justify-center">
+                            <span className="text-4xl opacity-50">🍲</span>
+                          </div>
+                        )}
+                        <div className="absolute top-2 left-2 bg-white/90 backdrop-blur p-1 rounded shadow-sm">
+                          <div className="w-3 h-3 border border-green-600 rounded-sm flex items-center justify-center">
+                            <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
+                          </div>
+                        </div>
+                      </div>
 
-        {filteredCategories.length === 0 && (
-          <div className="mx-auto max-w-md py-20 text-center">
-            <p className="font-display text-3xl font-bold text-stone-950">No dishes found</p>
-            <p className="mt-2 text-sm text-stone-500">Try another search or turn off the popular filter.</p>
+                      {/* Content Side */}
+                      <div className="flex-1 p-4 flex flex-col">
+                        <div className="flex justify-between items-start gap-2 mb-1">
+                          <h3 className="font-bold text-base md:text-lg text-stone-950 leading-tight">
+                            {food.name}
+                          </h3>
+                          {food.isPopular && (
+                            <span className="shrink-0 bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
+                              Popular
+                            </span>
+                          )}
+                        </div>
+                        
+                        {food.description && (
+                          <p className="text-xs sm:text-sm text-stone-500 line-clamp-2 mb-4">
+                            {food.description}
+                          </p>
+                        )}
+                        
+                        <div className="mt-auto flex items-end justify-between pt-2">
+                          <div className="flex flex-col">
+                            <span className="text-lg font-bold text-stone-950">
+                              {formatPrice(food.discountPrice || food.price)}
+                            </span>
+                            {food.discountPrice && (
+                              <span className="text-xs text-stone-400 line-through">
+                                {formatPrice(food.price)}
+                              </span>
+                            )}
+                          </div>
+                          
+                          {food.isAvailable ? (
+                            <AddToCartButton food={food} compact={false} />
+                          ) : (
+                            <span className="text-sm font-medium text-red-500 px-3 py-1.5 bg-red-50 rounded-lg">
+                              Unavailable
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ))}
           </div>
         )}
       </div>
     </div>
-  )
-}
-
-function MenuFoodRow({ food, canOrder, categoryName }: { food: Food; canOrder: boolean; categoryName: string }) {
-  const price = parseFloat(food.price.toString())
-  const discountPrice = food.discountPrice ? parseFloat(food.discountPrice.toString()) : null
-  const displayPrice = discountPrice ?? price
-
-  return (
-    <article className={`group flex min-h-40 gap-4 rounded-2xl border border-stone-200 bg-white p-3 transition hover:border-amber-300 hover:shadow-lg ${!food.isAvailable ? 'opacity-60' : ''}`}>
-      <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-xl bg-amber-50 sm:h-36 sm:w-40">
-        {food.imageUrl ? (
-          <Image src={food.imageUrl} alt={food.name} fill className="object-cover transition duration-500 group-hover:scale-105" />
-        ) : (
-          <div className="flex h-full items-center justify-center px-3 text-center text-xs font-bold text-amber-900">Foody Cloud</div>
-        )}
-        <div className="absolute left-2 top-2 rounded-full bg-white/95 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-green-800">Veg</div>
-      </div>
-
-      <div className="flex min-w-0 flex-1 flex-col py-1">
-        <div className="flex items-start gap-2">
-          <h3 className="text-base font-bold leading-snug text-stone-950">{food.name}</h3>
-          {food.isPopular && <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-black text-amber-800">Popular</span>}
-        </div>
-        {food.description && <p className="mt-2 line-clamp-2 text-sm leading-6 text-stone-500">{food.description}</p>}
-        <div className="mt-auto flex items-center justify-between gap-3 pt-4">
-          <div>
-            <span className="text-lg font-black text-stone-950">{formatPrice(displayPrice)}</span>
-            {discountPrice && <span className="ml-2 text-sm text-stone-400 line-through">{formatPrice(price)}</span>}
-          </div>
-          {canOrder && food.isAvailable ? (
-            <AddToCartButton food={{ foodId: food.id, name: food.name, price: displayPrice, imageUrl: food.imageUrl, categoryName }} />
-          ) : (
-            <span className="text-xs font-semibold text-stone-400">{!food.isAvailable ? 'Unavailable' : 'Closed'}</span>
-          )}
-        </div>
-      </div>
-    </article>
   )
 }

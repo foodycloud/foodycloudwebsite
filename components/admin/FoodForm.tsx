@@ -1,278 +1,279 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Image from 'next/image'
-import { Upload, X } from 'lucide-react'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import { Camera, Loader2 } from 'lucide-react';
 
-interface Category { id: string; name: string }
 interface FoodData {
-  name: string
-  description?: string | null
-  price: number
-  discountPrice?: number | null
-  categoryId: string
-  isAvailable: boolean
-  isFeatured: boolean
-  isPopular: boolean
-  isVeg: boolean
-  isJainAvail: boolean
-  sortOrder: number
-  imageUrl?: string | null
+  id?: string;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  price: number;
+  discountPrice: number | null;
+  categoryId: string;
+  isAvailable: boolean;
+  isFeatured: boolean;
+  isPopular: boolean;
+  isVeg: boolean;
+  isJainAvail: boolean;
 }
 
-interface FoodFormProps {
-  categories: Category[]
-  initialData?: FoodData & { id?: string }
-  foodId?: string
+interface Category {
+  id: string;
+  name: string;
 }
 
-export default function FoodForm({ categories, initialData, foodId }: FoodFormProps) {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [imageUrl, setImageUrl] = useState(initialData?.imageUrl || '')
-  const [uploadingImage, setUploadingImage] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+interface Props {
+  categories: Category[];
+  initialData?: FoodData;
+  foodId?: string;
+}
 
-  const [form, setForm] = useState<FoodData>({
+export default function FoodForm({ categories, initialData, foodId }: Props) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  
+  const [formData, setFormData] = useState<FoodData>({
     name: initialData?.name || '',
     description: initialData?.description || '',
+    imageUrl: initialData?.imageUrl || '',
     price: initialData?.price || 0,
     discountPrice: initialData?.discountPrice || null,
-    categoryId: initialData?.categoryId || (categories[0]?.id || ''),
+    categoryId: initialData?.categoryId || (categories.length > 0 ? categories[0].id : ''),
     isAvailable: initialData?.isAvailable ?? true,
     isFeatured: initialData?.isFeatured ?? false,
     isPopular: initialData?.isPopular ?? false,
     isVeg: initialData?.isVeg ?? true,
     isJainAvail: initialData?.isJainAvail ?? false,
-    sortOrder: initialData?.sortOrder ?? 0,
-    imageUrl: initialData?.imageUrl || null,
-  })
+  });
 
-  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploadingImage(true)
-    try {
-      // Get signed upload params
-      const sigRes = await fetch('/api/admin/media', { method: 'POST' })
-      const sigData = await sigRes.json()
-
-      // Upload to Cloudinary
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('api_key', sigData.api_key)
-      formData.append('timestamp', sigData.timestamp)
-      formData.append('signature', sigData.signature)
-      formData.append('folder', sigData.folder)
-
-      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloud_name}/image/upload`, {
-        method: 'POST',
-        body: formData,
-      })
-      const uploadData = await uploadRes.json()
-
-      if (uploadData.secure_url) {
-        setImageUrl(uploadData.secure_url)
-        setForm(prev => ({ ...prev, imageUrl: uploadData.secure_url }))
-        // Save to media library
-        await fetch('/api/admin/media', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            url: uploadData.secure_url,
-            publicId: uploadData.public_id,
-            filename: file.name,
-            width: uploadData.width,
-            height: uploadData.height,
-            sizeBytes: file.size,
-          }),
-        })
-      }
-    } catch {
-      setError('Failed to upload image. Please try again.')
-    } finally {
-      setUploadingImage(false)
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    if (type === 'number') {
+      setFormData({ ...formData, [name]: value === '' ? null : Number(value) });
+    } else {
+      setFormData({ ...formData, [name]: value });
     }
-  }
+  };
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError('')
-    setSuccess('')
-    setLoading(true)
+  const handleToggle = (field: keyof FoodData) => {
+    setFormData({ ...formData, [field]: !formData[field] });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || formData.price <= 0 || !formData.categoryId) {
+      toast.error('Please fill all required fields correctly');
+      return;
+    }
+
+    setLoading(true);
     try {
-      const payload = { ...form, imageUrl: imageUrl || null }
-      const url = foodId ? `/api/admin/foods/${foodId}` : '/api/admin/foods'
-      const method = foodId ? 'PUT' : 'POST'
+      const url = foodId ? `/api/admin/foods/${foodId}` : '/api/admin/foods';
+      const method = foodId ? 'PATCH' : 'POST';
 
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
+        body: JSON.stringify(formData),
+      });
 
-      const data = await res.json()
       if (!res.ok) {
-        setError(data.error || 'Failed to save. Please check your inputs.')
-      } else {
-        setSuccess(foodId ? 'Food updated successfully!' : 'Food added to your menu!')
-        if (!foodId) {
-          setTimeout(() => router.push('/admin/foods'), 1000)
-        }
-        router.refresh()
+        const error = await res.json();
+        throw new Error(error.message || 'Something went wrong');
       }
-    } catch {
-      setError('Something went wrong. Please try again.')
+
+      toast.success(foodId ? 'Food updated successfully!' : 'Food added successfully!');
+      router.push('/admin/foods');
+      router.refresh();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save food');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
-      {/* Image Upload */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Food Image</label>
-        <div className="flex items-start gap-4">
-          {imageUrl ? (
+    <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8 pb-12 pt-6">
+      
+      {/* Image Section */}
+      <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Food Photo</h2>
+        <p className="text-gray-500 mb-6">Paste any image URL from Google, Unsplash, or any website</p>
+        
+        <div className="space-y-4">
+          <input
+            type="url"
+            name="imageUrl"
+            value={formData.imageUrl || ''}
+            onChange={handleChange}
+            placeholder="https://..."
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all text-gray-900"
+          />
+          <p className="text-sm text-gray-400">
+            💡 Tip: Search on Google Images, right-click → Copy image address
+          </p>
+
+          <div className="relative h-64 w-full md:w-96 rounded-2xl overflow-hidden border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+            {formData.imageUrl && formData.imageUrl.startsWith('http') ? (
+              <img
+                src={formData.imageUrl}
+                alt="Preview"
+                className="h-full w-full object-cover rounded-xl"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  (e.target as HTMLImageElement).parentElement?.classList.add('flex', 'items-center', 'justify-center');
+                }}
+              />
+            ) : (
+              <div className="text-center">
+                <Camera className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                <span className="text-gray-400 font-medium">No image yet</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Basic Info */}
+      <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm space-y-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Basic Info</h2>
+        
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-gray-700">Food Name *</label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-lg font-medium text-gray-900"
+            placeholder="e.g. Paneer Butter Masala"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-gray-700">Description</label>
+          <textarea
+            name="description"
+            value={formData.description || ''}
+            onChange={handleChange}
+            rows={3}
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-gray-900"
+            placeholder="Brief description of the dish..."
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-gray-700">Category *</label>
+          <select
+            name="categoryId"
+            value={formData.categoryId}
+            onChange={handleChange}
+            required
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none bg-white text-gray-900 appearance-none font-medium"
+          >
+            <option value="" disabled>Select a category</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Pricing */}
+      <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm space-y-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Pricing</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-gray-700">Regular Price *</label>
             <div className="relative">
-              <Image src={imageUrl} alt="Food" width={96} height={96} className="w-24 h-24 rounded-xl object-cover" />
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₹</span>
+              <input
+                type="number"
+                name="price"
+                value={formData.price || ''}
+                onChange={handleChange}
+                required
+                min="0"
+                step="0.01"
+                className="w-full rounded-xl border border-gray-200 pl-8 pr-4 py-3 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-gray-900 font-bold"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-gray-700">Sale Price (Optional)</label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₹</span>
+              <input
+                type="number"
+                name="discountPrice"
+                value={formData.discountPrice || ''}
+                onChange={handleChange}
+                min="0"
+                step="0.01"
+                className="w-full rounded-xl border border-gray-200 pl-8 pr-4 py-3 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none text-gray-900 font-bold"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Leave empty if no discount</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Badges & Availability */}
+      <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm space-y-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-6">Availability & Badges</h2>
+        
+        <div className="space-y-6">
+          {[
+            { id: 'isAvailable', label: 'Available on menu', desc: 'Turn off to hide from customers temporarily' },
+            { id: 'isVeg', label: 'Vegetarian', desc: 'Mark this item as pure veg' },
+            { id: 'isFeatured', label: 'Featured on homepage', desc: 'Show this prominently on the main page' },
+            { id: 'isPopular', label: 'Show as Popular', desc: 'Adds a "Popular" badge to this item' },
+            { id: 'isJainAvail', label: 'Jain option available', desc: 'Customers can request Jain preparation' },
+          ].map((toggle) => (
+            <div key={toggle.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+              <div>
+                <h3 className="font-bold text-gray-900">{toggle.label}</h3>
+                <p className="text-sm text-gray-500">{toggle.desc}</p>
+              </div>
               <button
                 type="button"
-                onClick={() => { setImageUrl(''); setForm(prev => ({ ...prev, imageUrl: null })) }}
-                className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center"
+                onClick={() => handleToggle(toggle.id as keyof FoodData)}
+                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
+                  formData[toggle.id as keyof FoodData] ? 'bg-amber-600' : 'bg-gray-300'
+                }`}
               >
-                <X className="w-3 h-3" />
+                <span
+                  className={`inline-block h-6 w-6 transform rounded-full bg-white transition duration-200 ease-in-out ${
+                    formData[toggle.id as keyof FoodData] ? 'translate-x-7' : 'translate-x-1'
+                  }`}
+                />
               </button>
             </div>
-          ) : (
-            <div className="w-24 h-24 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center bg-gray-50">
-              <span className="text-2xl">🍲</span>
-            </div>
-          )}
-          <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-medium transition flex items-center gap-2">
-            <Upload className="w-4 h-4" />
-            {uploadingImage ? 'Uploading...' : 'Upload Image'}
-            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploadingImage} />
-          </label>
-        </div>
-      </div>
-
-      {/* Name */}
-      <div>
-        <label htmlFor="food-name" className="block text-sm font-medium text-gray-700 mb-1">Food Name <span className="text-red-500">*</span></label>
-        <input
-          id="food-name"
-          type="text"
-          required
-          value={form.name}
-          onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
-          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-900"
-          placeholder="e.g. Paneer Butter Masala"
-        />
-      </div>
-
-      {/* Description */}
-      <div>
-        <label htmlFor="food-desc" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-        <textarea
-          id="food-desc"
-          rows={3}
-          value={form.description || ''}
-          onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))}
-          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-900 resize-none"
-          placeholder="Describe this food item..."
-        />
-      </div>
-
-      {/* Category */}
-      <div>
-        <label htmlFor="food-category" className="block text-sm font-medium text-gray-700 mb-1">Category <span className="text-red-500">*</span></label>
-        <select
-          id="food-category"
-          value={form.categoryId}
-          onChange={e => setForm(prev => ({ ...prev, categoryId: e.target.value }))}
-          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-900"
-        >
-          {categories.map(c => (
-            <option key={c.id} value={c.id}>{c.name}</option>
           ))}
-        </select>
-      </div>
-
-      {/* Price */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="food-price" className="block text-sm font-medium text-gray-700 mb-1">Price (₹) <span className="text-red-500">*</span></label>
-          <input
-            id="food-price"
-            type="number"
-            min="0"
-            step="1"
-            required
-            value={form.price}
-            onChange={e => setForm(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-900"
-          />
-        </div>
-        <div>
-          <label htmlFor="food-discount" className="block text-sm font-medium text-gray-700 mb-1">Discount Price (₹)</label>
-          <input
-            id="food-discount"
-            type="number"
-            min="0"
-            step="1"
-            value={form.discountPrice || ''}
-            onChange={e => setForm(prev => ({ ...prev, discountPrice: e.target.value ? parseFloat(e.target.value) : null }))}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-900"
-            placeholder="Optional"
-          />
         </div>
       </div>
 
-      {/* Toggles */}
-      <div className="grid grid-cols-2 gap-3">
-        {([
-          ['isAvailable', 'Available on Menu'],
-          ['isFeatured', 'Featured Item'],
-          ['isPopular', 'Popular Item'],
-          ['isVeg', 'Vegetarian'],
-          ['isJainAvail', 'Jain Available'],
-        ] as [keyof FoodData, string][]).map(([key, label]) => (
-          <label key={key} className="flex items-center gap-3 cursor-pointer p-3 border border-gray-100 rounded-xl hover:bg-gray-50">
-            <input
-              type="checkbox"
-              checked={Boolean(form[key])}
-              onChange={e => setForm(prev => ({ ...prev, [key]: e.target.checked }))}
-              className="w-4 h-4 text-amber-600 rounded"
-            />
-            <span className="text-sm text-gray-700">{label}</span>
-          </label>
-        ))}
-      </div>
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-lg py-4 rounded-full transition-colors flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed shadow-md"
+      >
+        {loading ? (
+          <>
+            <Loader2 className="w-6 h-6 mr-2 animate-spin" />
+            Saving...
+          </>
+        ) : (
+          foodId ? 'Update Food Item' : 'Save Food Item'
+        )}
+      </button>
 
-      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{error}</div>}
-      {success && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm">{success}</div>}
-
-      <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={loading}
-          id="save-food-btn"
-          className="bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 text-white font-semibold px-6 py-3 rounded-xl transition"
-        >
-          {loading ? 'Saving...' : (foodId ? 'Save Changes' : 'Add to Menu')}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-6 py-3 rounded-xl transition"
-        >
-          Cancel
-        </button>
-      </div>
     </form>
-  )
+  );
 }

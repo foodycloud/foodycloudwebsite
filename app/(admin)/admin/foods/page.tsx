@@ -1,134 +1,204 @@
-import { prisma } from '@/lib/prisma'
-import Link from 'next/link'
-import { formatPrice } from '@/lib/utils'
-import FoodActions from '@/components/admin/FoodActions'
-import Image from 'next/image'
+import { prisma } from '@/lib/prisma';
+import Image from 'next/image';
+import Link from 'next/link';
+import { formatPrice } from '@/lib/utils';
+import { Plus, Search, UtensilsCrossed } from 'lucide-react';
+import FoodActions from '@/components/admin/FoodActions';
 
-export default async function FoodsPage({ searchParams }: { searchParams: { search?: string; categoryId?: string } }) {
-  const { search, categoryId } = searchParams
+interface Props {
+  searchParams: {
+    q?: string;
+    category?: string;
+  };
+}
 
-  const where: Record<string, unknown> = { isDeleted: false }
-  if (search) where.name = { contains: search, mode: 'insensitive' }
-  if (categoryId) where.categoryId = categoryId
+export default async function FoodsPage({ searchParams }: Props) {
+  const query = searchParams.q || '';
+  const categoryId = searchParams.category || '';
+
+  const where: any = { isDeleted: false };
+  if (query) {
+    where.name = { contains: query, mode: 'insensitive' };
+  }
+  if (categoryId) {
+    where.categoryId = categoryId;
+  }
 
   const [foods, categories] = await Promise.all([
     prisma.food.findMany({
       where,
-      include: { category: { select: { name: true } } },
-      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      include: { category: true },
+      orderBy: { createdAt: 'desc' },
     }),
-    prisma.category.findMany({ orderBy: { sortOrder: 'asc' } }),
-  ])
+    prisma.category.findMany({
+      orderBy: { name: 'asc' },
+    }),
+  ]);
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Menu & Food</h1>
-        <Link
-          href="/admin/foods/new"
-          id="add-food-btn"
-          className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition"
-        >
-          + Add Food
-        </Link>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <form method="get" className="flex gap-2 flex-wrap">
-          <input
-            name="search"
-            defaultValue={search}
-            placeholder="Search food..."
-            className="border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-          />
-          <select
-            name="categoryId"
-            defaultValue={categoryId}
-            className="border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+    <div className="p-6 max-w-[1600px] mx-auto space-y-8">
+      
+      {/* Header Area */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Menu & Food</h1>
+          <p className="text-gray-500 mt-1">Manage your restaurant offerings ({foods.length} items)</p>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-4 items-center">
+          <form className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              name="q"
+              defaultValue={query}
+              placeholder="Search foods..."
+              className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+            {categoryId && <input type="hidden" name="category" value={categoryId} />}
+          </form>
+          <Link
+            href="/admin/foods/new"
+            className="w-full sm:w-auto px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-full transition-colors flex items-center justify-center whitespace-nowrap"
           >
-            <option value="">All Categories</option>
-            {categories.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-          <button type="submit" className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium transition">
-            Filter
-          </button>
-          <Link href="/admin/foods" className="text-gray-500 hover:text-gray-700 px-4 py-2 text-sm">
-            Clear
+            <Plus className="w-5 h-5 mr-1" />
+            Add Food
           </Link>
-        </form>
+        </div>
       </div>
 
-      {/* Food List */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        {foods.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <p className="text-lg font-medium">No food items found</p>
-            <Link href="/admin/foods/new" className="mt-3 inline-block text-amber-600 font-medium text-sm">
-              Add your first food item
-            </Link>
-          </div>
-        ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                {['Food', 'Category', 'Price', 'Status', 'Featured', ''].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {foods.map(food => (
-                <tr key={food.id} className="hover:bg-gray-50 transition">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      {food.imageUrl ? (
-                        <Image src={food.imageUrl} alt={food.name} width={40} height={40} className="w-10 h-10 rounded-lg object-cover" />
-                      ) : (
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-lg">🍲</div>
-                      )}
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{food.name}</p>
-                        {food.description && (
-                          <p className="text-xs text-gray-400 truncate max-w-xs">{food.description}</p>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-sm text-gray-600">{food.category.name}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div>
-                      <span className="text-sm font-semibold text-gray-900">{formatPrice(food.price.toString())}</span>
-                      {food.discountPrice && (
-                        <span className="text-xs text-gray-400 line-through ml-1">{formatPrice(food.discountPrice.toString())}</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                      food.isAvailable ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
-                    }`}>
-                      {food.isAvailable ? 'Available' : 'Unavailable'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {food.isFeatured && (
-                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">Featured</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <FoodActions foodId={food.id} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+      {/* Category Pills */}
+      <div className="flex flex-wrap gap-2">
+        <Link
+          href={`/admin/foods${query ? `?q=${query}` : ''}`}
+          className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${
+            !categoryId 
+              ? 'bg-stone-900 text-white' 
+              : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+          }`}
+        >
+          All Items
+        </Link>
+        {categories.map((cat) => (
+          <Link
+            key={cat.id}
+            href={`/admin/foods?category=${cat.id}${query ? `&q=${query}` : ''}`}
+            className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${
+              categoryId === cat.id
+                ? 'bg-stone-900 text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            {cat.name}
+          </Link>
+        ))}
       </div>
+
+      {/* Grid */}
+      {foods.length === 0 ? (
+        <div className="bg-white border border-gray-100 rounded-3xl p-16 flex flex-col items-center justify-center text-center mt-8">
+          <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+            <UtensilsCrossed className="w-10 h-10 text-gray-400" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">No food items found</h2>
+          <p className="text-gray-500 mb-6 max-w-md">
+            {query || categoryId ? "We couldn't find anything matching your filters." : "You haven't added any food items to your menu yet."}
+          </p>
+          <Link
+            href="/admin/foods/new"
+            className="px-6 py-3 bg-amber-600 text-white font-bold rounded-full hover:bg-amber-700 transition-colors"
+          >
+            Add your first item
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          {foods.map((food) => (
+            <div key={food.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden flex flex-col shadow-sm hover:shadow-md transition-shadow group">
+              {/* Photo Area */}
+              <div className="relative aspect-square sm:aspect-[4/3] bg-gradient-to-br from-amber-50 to-amber-100 flex items-center justify-center overflow-hidden">
+                {food.imageUrl ? (
+                  <img
+                    src={food.imageUrl}
+                    alt={food.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <span className="text-amber-700/50 font-bold text-xl px-4 text-center">{food.name}</span>
+                )}
+                
+                {/* Badges */}
+                <div className="absolute top-2 left-2 flex gap-1">
+                  {food.isVeg && (
+                    <div className="bg-white p-1 rounded shadow-sm border border-green-600">
+                      <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                    </div>
+                  )}
+                </div>
+                <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+                  {food.isPopular && (
+                    <span className="bg-amber-500 text-white text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                      Popular
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Card Body */}
+              <div className="p-4 flex flex-col flex-1">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 line-clamp-1">
+                  {food.category?.name}
+                </p>
+                <h3 className="font-bold text-gray-900 text-lg leading-tight mb-2 line-clamp-2" title={food.name}>
+                  {food.name}
+                </h3>
+                
+                <div className="mt-auto pt-2 space-y-3">
+                  <div className="flex items-end gap-2">
+                    <span className="text-xl font-black text-gray-900">
+                      {formatPrice(food.discountPrice || food.price)}
+                    </span>
+                    {food.discountPrice && (
+                      <span className="text-sm font-medium text-gray-400 line-through pb-0.5">
+                        {formatPrice(food.price)}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between items-center pb-2">
+                    {food.isAvailable ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-green-50 text-green-700 text-xs font-bold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                        Available
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 text-red-700 text-xs font-bold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                        Hidden
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2 pt-3 border-t border-gray-100">
+                    <Link
+                      href={`/admin/foods/${food.id}/edit`}
+                      className="flex-1 py-2 text-center border-2 border-amber-500 text-amber-700 font-bold text-sm rounded-xl hover:bg-amber-50 transition-colors"
+                    >
+                      Edit
+                    </Link>
+                    <div className="flex-1">
+                      <FoodActions foodId={food.id} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
-  )
+  );
 }
