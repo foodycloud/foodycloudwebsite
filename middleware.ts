@@ -12,6 +12,7 @@ export const config = {
     '/admin/offers/:path*',
     '/admin/settings/:path*',
     '/admin/media/:path*',
+    '/admin/images/:path*',
     '/admin/customers/:path*',
   ],
 }
