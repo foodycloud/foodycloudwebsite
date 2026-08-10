@@ -1,8 +1,17 @@
 import { auth } from '@/lib/auth'
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 
-export default auth((req) => {
-  const isAuthenticated = !!req.auth?.user
+export async function middleware(req: NextRequest) {
+  const isLoginPage = req.nextUrl.pathname === '/admin/login'
+  const session = await auth()
+  const isAuthenticated = !!session?.user
+
+  if (isLoginPage) {
+    if (isAuthenticated) {
+      return NextResponse.redirect(new URL('/admin', req.url))
+    }
+    return NextResponse.next()
+  }
 
   if (!isAuthenticated) {
     const loginUrl = new URL('/admin/login', req.url)
@@ -11,8 +20,8 @@ export default auth((req) => {
   }
 
   return NextResponse.next()
-})
+}
 
 export const config = {
-  matcher: ['/admin', '/admin/((?!login).*)'],
+  matcher: ['/admin/:path*'],
 }
