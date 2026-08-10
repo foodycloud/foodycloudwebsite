@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, ShoppingBag, UtensilsCrossed, Tag, Percent,
-  Users, Image, Settings, Home, ChevronRight
+  Users, Image as ImageIcon, Settings, Home, ChevronRight
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -16,7 +16,7 @@ const navItems = [
   { href: '/admin/categories', label: 'Categories', icon: Tag },
   { href: '/admin/offers', label: 'Offers', icon: Percent },
   { href: '/admin/customers', label: 'Customers', icon: Users },
-  { href: '/admin/media', label: 'Images', icon: Image },
+  { href: '/admin/media', label: 'Images', icon: ImageIcon },
   { href: '/admin/settings', label: 'Business Settings', icon: Settings },
   { href: '/admin/settings/homepage', label: 'Homepage', icon: Home },
 ]
