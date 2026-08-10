@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Menu',
-  description: 'Explore the full Foody Cloud menu — pure vegetarian curries, rotis, parathas, snacks, rice dishes and breakfast items. Order online for delivery.',
+  description: 'Explore the full Foody Cloud menu: pure vegetarian curries, rotis, parathas, snacks, rice dishes and breakfast items.',
 }
 
 export default async function MenuPage() {

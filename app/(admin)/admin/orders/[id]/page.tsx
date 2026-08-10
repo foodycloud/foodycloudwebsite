@@ -72,8 +72,8 @@ export default async function OrderDetailPage({ params }: { params: { id: string
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">Payment</span>
             <span className={`font-medium ${order.paymentStatus === 'PAID' ? 'text-green-600' : 'text-amber-600'}`}>
-              {order.paymentMethod === 'CASH_ON_DELIVERY' ? 'Cash on Delivery' : 'Online'}
-              {' • '}{order.paymentStatus}
+              {order.paymentMethod === 'CASH_ON_DELIVERY' ? 'Manual payment' : 'Online prepaid'}
+              {' - '}{order.paymentStatus}
             </span>
           </div>
         </div>

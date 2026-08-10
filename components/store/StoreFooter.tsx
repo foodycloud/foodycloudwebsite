@@ -1,73 +1,66 @@
 import Link from 'next/link'
-import { MapPin, Phone, Clock, Instagram } from 'lucide-react'
+import { Clock, Instagram, MapPin, MessageCircle, Phone } from 'lucide-react'
+import { WHATSAPP_DISPLAY, getWhatsAppUrl } from '@/lib/storefront'
 
 export default function StoreFooter() {
   return (
-    <footer className="bg-gray-900 text-gray-300 mt-16">
-      <div className="max-w-6xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Brand */}
+    <footer className="mt-20 border-t border-stone-200 bg-stone-950 text-stone-300">
+      <div className="container-page grid gap-10 py-12 md:grid-cols-[1.2fr_1fr_1fr]">
         <div>
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-8 h-8 bg-amber-600 rounded-lg flex items-center justify-center">
-              <span className="text-white text-sm font-bold">FC</span>
+          <div className="mb-4 flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-lg bg-amber-400 text-sm font-black text-stone-950">FC</div>
+            <div>
+              <p className="font-display text-xl font-bold text-white">Foody Cloud</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-stone-500">Pure veg home kitchen</p>
             </div>
-            <span className="font-display font-bold text-white">Foody Cloud</span>
           </div>
-          <p className="text-sm text-gray-400 leading-relaxed">
-            Pure Veg • Home Kitchen<br />
-            Freshly Cooked • Purely Homemade • Made with Love
+          <p className="max-w-sm text-sm leading-6 text-stone-400">
+            Homestyle vegetarian meals cooked in small batches from Chinar Park, Kolupukur.
           </p>
-          <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
-            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            <span>FSSAI: 22826136000840</span>
-          </div>
+          <p className="mt-4 text-xs text-stone-500">FSSAI: 22826136000840</p>
         </div>
 
-        {/* Contact */}
         <div>
-          <h3 className="text-white font-semibold mb-4">Contact & Location</h3>
+          <h3 className="mb-4 text-sm font-bold uppercase tracking-[0.16em] text-white">Contact</h3>
           <ul className="space-y-3 text-sm">
-            <li className="flex items-start gap-2.5">
-              <MapPin className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+            <li className="flex items-start gap-3">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
               <span>Chinar Park, Kolupukur</span>
             </li>
-            <li className="flex items-center gap-2.5">
-              <Phone className="w-4 h-4 text-amber-500 shrink-0" />
-              <a href="tel:+919007182421" className="hover:text-amber-400 transition">90071 82421</a>
+            <li className="flex items-center gap-3">
+              <Phone className="h-4 w-4 shrink-0 text-amber-400" />
+              <a href="tel:+919007182421" className="transition hover:text-amber-300">{WHATSAPP_DISPLAY}</a>
             </li>
-            <li className="flex items-start gap-2.5">
-              <Clock className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-              <div>
-                <p>Lunch: 12:00 PM onwards</p>
-                <p>Dinner: 6:00 PM onwards</p>
-              </div>
+            <li className="flex items-start gap-3">
+              <Clock className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+              <span>Lunch from 12:00 PM<br />Dinner from 6:00 PM</span>
             </li>
           </ul>
         </div>
 
-        {/* Links */}
         <div>
-          <h3 className="text-white font-semibold mb-4">Quick Links</h3>
-          <ul className="space-y-2 text-sm">
-            <li><Link href="/menu" className="hover:text-amber-400 transition">View Full Menu</Link></li>
-            <li><Link href="/cart" className="hover:text-amber-400 transition">Your Cart</Link></li>
+          <h3 className="mb-4 text-sm font-bold uppercase tracking-[0.16em] text-white">Order</h3>
+          <ul className="space-y-3 text-sm">
+            <li><Link href="/menu" className="transition hover:text-amber-300">View menu</Link></li>
+            <li><Link href="/cart" className="transition hover:text-amber-300">Review cart</Link></li>
             <li>
-              <a href="https://www.instagram.com/foody.cloud" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-amber-400 transition">
-                <Instagram className="w-4 h-4" />
-                @foody.cloud
+              <a href={getWhatsAppUrl()} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 transition hover:text-amber-300">
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp order
               </a>
             </li>
             <li>
-              <a href="https://wa.me/919007182421" target="_blank" rel="noopener noreferrer" className="hover:text-amber-400 transition">
-                WhatsApp Order
+              <a href="https://www.instagram.com/foody.cloud" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 transition hover:text-amber-300">
+                <Instagram className="h-4 w-4" />
+                @foody.cloud
               </a>
             </li>
           </ul>
         </div>
       </div>
 
-      <div className="border-t border-gray-800 text-center py-4 text-xs text-gray-600">
-        © {new Date().getFullYear()} Foody Cloud. All rights reserved. Pure Food • Pure Love • Pure Satisfaction
+      <div className="border-t border-white/10 py-4 text-center text-xs text-stone-500">
+        Copyright {new Date().getFullYear()} Foody Cloud. All rights reserved.
       </div>
     </footer>
   )

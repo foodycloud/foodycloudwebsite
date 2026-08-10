@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     // Check minimum order
     const minOrder = parseFloat(settings.minOrderAmount.toString())
     if (subtotal < minOrder) {
-      return NextResponse.json({ error: `Minimum order amount is ₹${minOrder}` }, { status: 400 })
+      return NextResponse.json({ error: `Minimum order amount is Rs ${minOrder}` }, { status: 400 })
     }
 
     // Delivery charge
@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
         specialRequest: customerData.specialRequest ?? null,
         orderStatus: 'NEW',
         paymentStatus: 'PENDING',
-        paymentMethod: 'CASH_ON_DELIVERY',
+        paymentMethod: 'ONLINE',
         items: { create: orderItemsData },
         ...(appliedOffer ? {
           offers: {

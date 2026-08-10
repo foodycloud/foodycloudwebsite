@@ -1,16 +1,15 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState } from 'react'
+import type { MouseEvent } from 'react'
 import { useCart } from '@/context/CartContext'
 import Link from 'next/link'
 import { formatPrice } from '@/lib/utils'
-import { ShoppingBag } from 'lucide-react'
+import { buildOrderWhatsAppMessage, getWhatsAppUrl, WHATSAPP_DISPLAY } from '@/lib/storefront'
+import { ArrowLeft, MessageCircle, ShieldCheck, ShoppingBag, Truck, Utensils } from 'lucide-react'
 
 export default function CheckoutClient() {
-  const router = useRouter()
-  const { items, subtotal, clearCart } = useCart()
-  const [loading, setLoading] = useState(false)
+  const { items, subtotal } = useCart()
   const [error, setError] = useState('')
 
   const [form, setForm] = useState({
@@ -23,153 +22,161 @@ export default function CheckoutClient() {
   })
 
   function updateField(key: string, value: string) {
-    setForm(prev => ({ ...prev, [key]: value }))
+    setForm((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const whatsAppUrl = useMemo(() => {
+    return getWhatsAppUrl(buildOrderWhatsAppMessage({ items, subtotal, customer: form }))
+  }, [form, items, subtotal])
+
+  function validateBeforeWhatsApp(e: MouseEvent<HTMLAnchorElement>) {
+    setError('')
+    if (!form.name.trim()) {
+      e.preventDefault()
+      setError('Please enter your name before sending the order on WhatsApp.')
+      return
+    }
+    if (!/^[6-9]\d{9}$/.test(form.phone.trim())) {
+      e.preventDefault()
+      setError('Please enter a valid 10-digit Indian mobile number.')
+      return
+    }
+    if (form.deliveryType === 'HOME_DELIVERY' && !form.deliveryAddress.trim()) {
+      e.preventDefault()
+      setError('Please enter your delivery address.')
+    }
   }
 
   if (items.length === 0) {
     return (
-      <div className="max-w-lg mx-auto px-4 py-20 text-center">
-        <ShoppingBag className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-        <p className="text-gray-600 mb-6">Your cart is empty.</p>
-        <Link href="/menu" className="bg-amber-600 text-white font-semibold px-6 py-3 rounded-xl">Browse Menu</Link>
+      <div className="container-page flex min-h-[60vh] items-center justify-center py-16 text-center">
+        <div className="max-w-md">
+          <ShoppingBag className="mx-auto mb-4 h-12 w-12 text-stone-300" />
+          <h1 className="font-display text-4xl font-bold text-stone-950">Your cart is empty</h1>
+          <p className="mt-3 text-stone-500">Choose something from the menu first.</p>
+          <Link href="/menu" className="focus-ring mt-8 inline-flex rounded-full bg-stone-950 px-7 py-4 text-sm font-black uppercase tracking-[0.12em] text-white">
+            Browse menu
+          </Link>
+        </div>
       </div>
     )
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError('')
-
-    if (form.deliveryType === 'HOME_DELIVERY' && !form.deliveryAddress.trim()) {
-      setError('Please enter your delivery address.')
-      return
-    }
-
-    setLoading(true)
-    try {
-      const res = await fetch('/api/store/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customer: form,
-          items: items.map(i => ({ foodId: i.foodId, quantity: i.quantity })),
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error || 'Failed to place order. Please try again.')
-      } else {
-        clearCart()
-        router.push(`/order/${data.orderNumber}`)
-      }
-    } catch {
-      setError('Something went wrong. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const inputClass = 'w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-900 bg-white'
-  const labelClass = 'block text-sm font-medium text-gray-700 mb-1'
+  const inputClass = 'focus-ring w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm font-semibold text-stone-950 placeholder:text-stone-400'
+  const labelClass = 'mb-1.5 block text-sm font-bold text-stone-700'
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="font-display text-2xl font-bold text-gray-900 mb-6">Checkout</h1>
+    <div className="container-page py-8 md:py-12">
+      <Link href="/cart" className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-stone-500 transition hover:text-amber-700">
+        <ArrowLeft className="h-4 w-4" />
+        Back to cart
+      </Link>
 
-      <div className="grid gap-6">
-        {/* Order summary */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <h2 className="font-semibold text-gray-900 mb-3">Your Order ({items.length} items)</h2>
-          <div className="space-y-2 mb-4">
-            {items.map(item => (
-              <div key={item.foodId} className="flex justify-between text-sm">
-                <span className="text-gray-700">{item.name} × {item.quantity}</span>
-                <span className="font-medium text-gray-900">{formatPrice(item.price * item.quantity)}</span>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between font-bold text-gray-900 border-t border-gray-100 pt-3">
-            <span>Subtotal</span><span>{formatPrice(subtotal)}</span>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">Delivery charge (if applicable) will be confirmed on your order.</p>
-        </div>
+      <div className="mb-7">
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">Checkout</p>
+        <h1 className="font-display text-4xl font-bold text-stone-950">Send order for prepaid confirmation</h1>
+        <p className="mt-3 max-w-2xl text-stone-600">
+          Online payment through Razorpay is being prepared. For now, review your details and send this order on WhatsApp so payment can be shared before preparation.
+        </p>
+      </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
-          <h2 className="font-semibold text-gray-900">Your Details</h2>
+      <div className="grid gap-8 lg:grid-cols-[1fr_390px] lg:items-start">
+        <form className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm md:p-6">
+          <h2 className="font-display text-2xl font-bold text-stone-950">Your details</h2>
 
-          <div>
-            <label className={labelClass}>Full Name <span className="text-red-500">*</span></label>
-            <input type="text" required value={form.name} onChange={e => updateField('name', e.target.value)} className={inputClass} placeholder="Enter your name" />
-          </div>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <div>
+              <label className={labelClass}>Full name <span className="text-red-500">*</span></label>
+              <input type="text" required value={form.name} onChange={(e) => updateField('name', e.target.value)} className={inputClass} placeholder="Enter your name" />
+            </div>
 
-          <div>
-            <label className={labelClass}>Phone Number <span className="text-red-500">*</span></label>
-            <input type="tel" required value={form.phone} onChange={e => updateField('phone', e.target.value)} className={inputClass} placeholder="10-digit mobile number" maxLength={10} />
+            <div>
+              <label className={labelClass}>Phone number <span className="text-red-500">*</span></label>
+              <input type="tel" required value={form.phone} onChange={(e) => updateField('phone', e.target.value)} className={inputClass} placeholder="10-digit mobile number" maxLength={10} />
+            </div>
           </div>
 
-          <div>
+          <div className="mt-4">
             <label className={labelClass}>Email (optional)</label>
-            <input type="email" value={form.email} onChange={e => updateField('email', e.target.value)} className={inputClass} placeholder="for order updates" />
+            <input type="email" value={form.email} onChange={(e) => updateField('email', e.target.value)} className={inputClass} placeholder="For order updates" />
           </div>
 
-          {/* Delivery Type */}
-          <div>
-            <label className={labelClass}>Delivery Option <span className="text-red-500">*</span></label>
-            <div className="grid grid-cols-2 gap-3">
-              {(['HOME_DELIVERY', 'SELF_PICKUP'] as const).map(type => (
+          <div className="mt-5">
+            <label className={labelClass}>Delivery option <span className="text-red-500">*</span></label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {(['HOME_DELIVERY', 'SELF_PICKUP'] as const).map((type) => (
                 <button
                   key={type}
                   type="button"
                   onClick={() => updateField('deliveryType', type)}
-                  className={`p-3 rounded-xl border-2 text-sm font-medium transition ${
-                    form.deliveryType === type
-                      ? 'border-amber-500 bg-amber-50 text-amber-700'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                  className={`focus-ring flex items-center gap-3 rounded-xl border p-4 text-left transition ${
+                    form.deliveryType === type ? 'border-amber-500 bg-amber-50 text-amber-900' : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'
                   }`}
                 >
-                  {type === 'HOME_DELIVERY' ? '🚚 Home Delivery' : '🛍️ Self Pickup'}
+                  {type === 'HOME_DELIVERY' ? <Truck className="h-5 w-5" /> : <Utensils className="h-5 w-5" />}
+                  <span className="font-bold">{type === 'HOME_DELIVERY' ? 'Home delivery' : 'Self pickup'}</span>
                 </button>
               ))}
             </div>
           </div>
 
           {form.deliveryType === 'HOME_DELIVERY' && (
-            <div>
-              <label className={labelClass}>Delivery Address <span className="text-red-500">*</span></label>
-              <textarea
-                rows={2}
-                required
-                value={form.deliveryAddress}
-                onChange={e => updateField('deliveryAddress', e.target.value)}
-                className={inputClass}
-                placeholder="Street address, landmark, area..."
-              />
+            <div className="mt-4">
+              <label className={labelClass}>Delivery address <span className="text-red-500">*</span></label>
+              <textarea rows={3} required value={form.deliveryAddress} onChange={(e) => updateField('deliveryAddress', e.target.value)} className={inputClass} placeholder="Street address, landmark, area" />
             </div>
           )}
 
-          <div>
-            <label className={labelClass}>Special Request (optional)</label>
-            <textarea rows={2} value={form.specialRequest} onChange={e => updateField('specialRequest', e.target.value)} className={inputClass} placeholder="Any special instructions for the kitchen?" />
+          <div className="mt-4">
+            <label className={labelClass}>Special request (optional)</label>
+            <textarea rows={3} value={form.specialRequest} onChange={(e) => updateField('specialRequest', e.target.value)} className={inputClass} placeholder="Any special instructions for the kitchen?" />
           </div>
 
-          {/* Payment info */}
-          <div className="bg-amber-50 rounded-xl p-4">
-            <p className="text-sm font-semibold text-amber-800">💵 Cash on Delivery</p>
-            <p className="text-xs text-amber-700 mt-0.5">Payment is collected at the time of delivery or pickup.</p>
+          <div className="mt-5 rounded-2xl border border-green-200 bg-green-50 p-4">
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-green-800" />
+              <div>
+                <p className="font-bold text-green-950">Prepaid orders only</p>
+                <p className="mt-1 text-sm leading-6 text-green-800">
+                  Cash on delivery is temporarily unavailable. Send the order on WhatsApp at {WHATSAPP_DISPLAY}; payment details will be shared before cooking starts.
+                </p>
+              </div>
+            </div>
           </div>
 
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{error}</div>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            id="place-order-btn"
-            className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 text-white font-bold py-4 rounded-xl transition"
-          >
-            {loading ? 'Placing Order...' : 'Place Order'}
-          </button>
+          {error && <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
         </form>
+
+        <aside className="sticky top-28 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <h2 className="font-display text-2xl font-bold text-stone-950">Order summary</h2>
+          <div className="mt-4 space-y-3">
+            {items.map((item) => (
+              <div key={item.foodId} className="flex justify-between gap-4 text-sm">
+                <span className="text-stone-600">{item.name} x {item.quantity}</span>
+                <span className="font-bold text-stone-950">{formatPrice(item.price * item.quantity)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 border-t border-stone-200 pt-4">
+            <div className="flex justify-between text-lg font-black text-stone-950">
+              <span>Subtotal</span>
+              <span>{formatPrice(subtotal)}</span>
+            </div>
+            <p className="mt-2 text-xs leading-5 text-stone-500">Delivery charge, final payable amount, and prepaid payment link are confirmed on WhatsApp.</p>
+          </div>
+
+          <a
+            href={whatsAppUrl}
+            onClick={validateBeforeWhatsApp}
+            target="_blank"
+            rel="noopener noreferrer"
+            id="place-order-btn"
+            className="focus-ring mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-green-700 px-5 py-4 text-sm font-black uppercase tracking-[0.12em] text-white transition hover:bg-green-800"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Send on WhatsApp
+          </a>
+        </aside>
       </div>
     </div>
   )

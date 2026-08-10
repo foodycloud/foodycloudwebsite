@@ -135,7 +135,7 @@ model Order {
   specialRequest  String?
   orderStatus     OrderStatus   @default(NEW)
   paymentStatus   PaymentStatus @default(PENDING)
-  paymentMethod   PaymentMethod @default(CASH_ON_DELIVERY)
+  paymentMethod   PaymentMethod @default(ONLINE)
   notes           String?
   items           OrderItem[]
   offers          OrderOffer[]
