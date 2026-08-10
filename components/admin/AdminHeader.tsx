@@ -4,7 +4,11 @@ import { LogOut } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 
-export default function AdminHeader() {
+interface AdminHeaderProps {
+  user?: { name?: string | null; email?: string | null }
+}
+
+export default function AdminHeader({ user }: AdminHeaderProps) {
   const pathname = usePathname();
   
   let title = 'Dashboard';
