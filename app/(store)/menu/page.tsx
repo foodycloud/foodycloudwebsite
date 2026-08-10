@@ -24,11 +24,19 @@ export default async function MenuPage() {
     prisma.businessSettings.findFirst(),
   ])
 
+  const formattedCategories = categories.map((cat) => ({
+    ...cat,
+    foods: cat.foods.map((food) => ({
+      ...food,
+      price: parseFloat(food.price.toString()),
+      discountPrice: food.discountPrice ? parseFloat(food.discountPrice.toString()) : null,
+    })),
+  }))
+
   return (
     <MenuClient
-      categories={categories}
+      categories={formattedCategories}
       isOpen={settings?.isOpen ?? true}
-      acceptingOrders={settings?.acceptingOrders ?? true}
       closedMessage={settings?.closedMessage ?? null}
     />
   )
