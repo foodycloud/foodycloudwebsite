@@ -6,7 +6,7 @@ export default async function EditCategoryPage({ params }: { params: { id: strin
   const category = await prisma.category.findUnique({ where: { id: params.id } })
   if (!category) notFound()
   return (
-    <div className="max-w-xl">
+    <div className="max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit: {category.name}</h1>
       <CategoryForm initialData={category} categoryId={category.id} />
     </div>

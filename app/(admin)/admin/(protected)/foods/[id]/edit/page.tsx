@@ -11,7 +11,7 @@ export default async function EditFoodPage({ params }: { params: { id: string } 
   if (!food) notFound()
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit: {food.name}</h1>
       <FoodForm
         categories={categories}
