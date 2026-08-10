@@ -7,6 +7,7 @@ import StoreFooter from '@/components/store/StoreFooter'
 import { CartProvider } from '@/context/CartContext'
 import { Toaster } from 'react-hot-toast'
 import CinematicIntro from '@/components/store/CinematicIntro'
+import { prisma } from '@/lib/prisma'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' })
@@ -28,7 +29,9 @@ export const metadata: Metadata = {
   },
 }
 
-export default function StoreLayout({ children }: { children: ReactNode }) {
+export default async function StoreLayout({ children }: { children: ReactNode }) {
+  const homepageSettings = await prisma.homepageSettings.findFirst()
+
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <head>
@@ -47,7 +50,10 @@ export default function StoreLayout({ children }: { children: ReactNode }) {
       <body className="font-body text-stone-950 antialiased">
         <CartProvider>
           <CinematicIntro />
-          <StoreHeader />
+          <StoreHeader 
+            bannerText={homepageSettings?.bannerText} 
+            bannerLinkUrl={homepageSettings?.bannerLinkUrl} 
+          />
           <main>{children}</main>
           <StoreFooter />
           <Toaster

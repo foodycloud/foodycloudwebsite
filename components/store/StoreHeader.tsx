@@ -8,7 +8,13 @@ import { ShoppingBag, Menu, X, MessageCircle } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { cn } from '@/lib/utils'
 
-export default function StoreHeader() {
+export default function StoreHeader({
+  bannerText,
+  bannerLinkUrl,
+}: {
+  bannerText?: string | null
+  bannerLinkUrl?: string | null
+}) {
   const pathname = usePathname()
   const { totalItems } = useCart()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -56,11 +62,34 @@ export default function StoreHeader() {
       className={cn(
         'fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out',
         isScrolled
-          ? 'bg-[#fbf8f1]/90 backdrop-blur-xl border-b border-amber-100/80 py-3 shadow-sm'
-          : 'bg-[#fbf8f1] border-b border-transparent py-4'
+          ? 'bg-[#fbf8f1]/90 backdrop-blur-xl border-b border-amber-100/80 shadow-sm'
+          : 'bg-[#fbf8f1] border-b border-transparent'
       )}
     >
-      <div className="container-page flex items-center justify-between">
+      {/* Announcement Banner */}
+      {bannerText && (
+        <div
+          className={cn(
+            'bg-amber-600 text-white text-center text-[11px] md:text-xs font-bold tracking-wider transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden',
+            isScrolled ? 'h-0 opacity-0' : 'py-2.5 px-4 h-9 opacity-100'
+          )}
+        >
+          <span className="truncate">{bannerText}</span>
+          {bannerLinkUrl && (
+            <Link
+              href={bannerLinkUrl}
+              className="underline hover:text-amber-100 transition-colors shrink-0"
+            >
+              Order Now &rarr;
+            </Link>
+          )}
+        </div>
+      )}
+
+      <div className={cn(
+        "container-page flex items-center justify-between transition-all duration-300",
+        isScrolled ? "py-3" : "py-4"
+      )}>
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 group">
           <div className="relative w-10 h-10 overflow-hidden transition-transform duration-300 group-hover:scale-105">

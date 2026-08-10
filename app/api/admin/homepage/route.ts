@@ -11,7 +11,7 @@ const homepageSchema = z.object({
   featuredCategoryIds: z.array(z.string()).optional(),
   bannerText: z.string().max(200).optional().nullable(),
   bannerImageUrl: z.string().url().optional().nullable(),
-  bannerLinkUrl: z.string().url().optional().nullable(),
+  bannerLinkUrl: z.string().max(300).optional().nullable(),
 })
 
 export async function GET() {

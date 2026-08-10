@@ -81,6 +81,30 @@ export default function HomepageSettingsForm({
         </div>
       </section>
 
+      <section className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
+        <h2 className="font-semibold text-gray-900">Announcement Banner</h2>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Banner Text (Leave empty to disable)</label>
+          <input
+            type="text"
+            value={form.bannerText}
+            onChange={e => setForm(p => ({ ...p, bannerText: e.target.value }))}
+            className={inputClass}
+            placeholder="e.g. 🌿 Special Weekend Menu is now live! Order via WhatsApp."
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Banner Link URL (Optional)</label>
+          <input
+            type="text"
+            value={form.bannerLinkUrl}
+            onChange={e => setForm(p => ({ ...p, bannerLinkUrl: e.target.value }))}
+            className={inputClass}
+            placeholder="e.g. /menu or external link"
+          />
+        </div>
+      </section>
+
       {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{error}</div>}
       {success && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm">{success}</div>}
 

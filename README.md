@@ -1,5 +1,7 @@
 # 🍛 Foody Cloud
 
+![Foody Cloud Banner](public/banner.jpg)
+
 > **Pure Veg Home Kitchen** — Production-grade cloud kitchen e-commerce platform
 
 Foody Cloud is a full-stack, database-driven food ordering platform for a pure vegetarian home kitchen. Built to be managed entirely by a non-technical business owner through the admin dashboard — no code changes required for day-to-day operations.
