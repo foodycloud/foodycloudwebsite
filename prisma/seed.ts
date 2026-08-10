@@ -8,7 +8,7 @@ async function main() {
 
   // 1. Admin user
   const adminEmail = process.env.ADMIN_EMAIL || 'admin@foodycloud.in'
-  const adminPassword = process.env.ADMIN_PASSWORD || 'FoodyCloud@2024'
+  const adminPassword = process.env.ADMIN_PASSWORD || 'FoodyCloud@2026'
   const passwordHash = await bcrypt.hash(adminPassword, 12)
 
   await prisma.adminUser.upsert({
