@@ -1,13 +1,13 @@
-import { prisma } from '@/lib/prisma';
-import { KitchenToggle } from '@/components/admin/KitchenToggle';
-import Link from 'next/link';
-import { ShoppingBag, IndianRupee, UtensilsCrossed, Users, Plus, Ticket, Settings, Info } from 'lucide-react';
-import { formatPrice } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
+import { prisma } from '@/lib/prisma'
+import KitchenToggle from '@/components/admin/KitchenToggle'
+import Link from 'next/link'
+import { ShoppingBag, IndianRupee, UtensilsCrossed, Users, Plus, Ticket, Settings, Info } from 'lucide-react'
+import { formatPrice } from '@/lib/utils'
+import { formatDistanceToNow } from 'date-fns'
 
 export default async function AdminDashboard() {
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
 
   const [
     totalOrders,
@@ -19,24 +19,25 @@ export default async function AdminDashboard() {
     todayOrders
   ] = await Promise.all([
     prisma.order.count(),
-    prisma.order.count({ where: { status: 'NEW' } }),
+    prisma.order.count({ where: { orderStatus: 'NEW' } }),
     prisma.food.count({ where: { isDeleted: false } }),
-    prisma.user.count({ where: { role: 'USER' } }),
-    prisma.storeSettings.findFirst() || { isKitchenOpen: false },
+    prisma.customer.count(),
+    prisma.businessSettings.findFirst(),
     prisma.order.findMany({
       take: 8,
       orderBy: { createdAt: 'desc' },
-      include: { user: true, items: true }
+      include: { customer: true, items: true }
     }),
     prisma.order.findMany({
-      where: { createdAt: { gte: todayStart }, status: { not: 'CANCELLED' } },
-      select: { total: true }
+      where: { createdAt: { gte: todayStart }, orderStatus: { not: 'CANCELLED' } },
+      select: { totalAmount: true }
     })
-  ]);
+  ])
 
-  const todayRevenue = todayOrders.reduce((sum, order) => sum + order.total, 0);
+  const todayRevenue = todayOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount.toString()), 0)
+  const isKitchenOpen = settings?.isOpen ?? true
 
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     NEW: 'bg-blue-100 text-blue-700',
     ACCEPTED: 'bg-yellow-100 text-yellow-700',
     PREPARING: 'bg-orange-100 text-orange-700',
@@ -44,7 +45,7 @@ export default async function AdminDashboard() {
     OUT_FOR_DELIVERY: 'bg-purple-100 text-purple-700',
     COMPLETED: 'bg-gray-100 text-gray-700',
     CANCELLED: 'bg-red-100 text-red-700',
-  };
+  }
 
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto">
@@ -52,7 +53,7 @@ export default async function AdminDashboard() {
       <div className="bg-gradient-to-r from-stone-950 to-stone-800 text-white rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between shadow-xl">
         <div className="flex items-center space-x-6 mb-6 md:mb-0">
           <div className="relative flex h-16 w-16 items-center justify-center">
-            {settings.isKitchenOpen ? (
+            {isKitchenOpen ? (
               <>
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-20"></span>
                 <span className="relative inline-flex rounded-full h-8 w-8 bg-green-500"></span>
@@ -63,16 +64,18 @@ export default async function AdminDashboard() {
           </div>
           <div>
             <h2 className="text-3xl font-black tracking-tight flex items-center gap-3">
-              {settings.isKitchenOpen ? 'KITCHEN IS OPEN' : 'KITCHEN IS CLOSED'}
+              {isKitchenOpen ? 'KITCHEN IS OPEN' : 'KITCHEN IS CLOSED'}
             </h2>
             <p className="text-stone-400 text-lg mt-1">
-              {settings.isKitchenOpen ? 'Accepting new orders from customers' : 'Not accepting orders right now'}
+              {isKitchenOpen ? 'Accepting new orders from customers' : 'Not accepting orders right now'}
             </p>
           </div>
         </div>
-        <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/10">
-          <KitchenToggle initialStatus={settings.isKitchenOpen} size="lg" />
-        </div>
+        {settings && (
+          <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/10">
+            <KitchenToggle initialOpen={isKitchenOpen} settingsId={settings.id} />
+          </div>
+        )}
       </div>
 
       {/* Stats Row */}
@@ -193,13 +196,13 @@ export default async function AdminDashboard() {
                     <td className="p-4 pl-6">
                       <Link href={`/admin/orders/${order.id}`} className="block">
                         <span className="font-mono font-medium text-gray-900 group-hover:text-amber-600 transition-colors">
-                          #{order.id.slice(-6).toUpperCase()}
+                          {order.orderNumber}
                         </span>
                       </Link>
                     </td>
                     <td className="p-4">
                       <Link href={`/admin/orders/${order.id}`} className="block text-gray-900 font-medium">
-                        {order.user?.name || 'Guest'}
+                        {order.customer?.name || 'Guest'}
                       </Link>
                     </td>
                     <td className="p-4">
@@ -209,13 +212,13 @@ export default async function AdminDashboard() {
                     </td>
                     <td className="p-4">
                       <Link href={`/admin/orders/${order.id}`} className="block font-bold text-gray-900">
-                        {formatPrice(order.total)}
+                        {formatPrice(order.totalAmount.toString())}
                       </Link>
                     </td>
                     <td className="p-4">
                       <Link href={`/admin/orders/${order.id}`} className="block">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColors[order.status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}`}>
-                          {order.status}
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColors[order.orderStatus] || 'bg-gray-100 text-gray-800'}`}>
+                          {order.orderStatus}
                         </span>
                       </Link>
                     </td>
@@ -232,5 +235,5 @@ export default async function AdminDashboard() {
         )}
       </div>
     </div>
-  );
+  )
 }

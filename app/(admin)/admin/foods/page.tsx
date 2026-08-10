@@ -159,11 +159,11 @@ export default async function FoodsPage({ searchParams }: Props) {
                 <div className="mt-auto pt-2 space-y-3">
                   <div className="flex items-end gap-2">
                     <span className="text-xl font-black text-gray-900">
-                      {formatPrice(food.discountPrice || food.price)}
+                      {formatPrice((food.discountPrice || food.price).toString())}
                     </span>
                     {food.discountPrice && (
                       <span className="text-sm font-medium text-gray-400 line-through pb-0.5">
-                        {formatPrice(food.price)}
+                        {formatPrice(food.price.toString())}
                       </span>
                     )}
                   </div>
