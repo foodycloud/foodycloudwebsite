@@ -1,11 +1,14 @@
-import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import Image from 'next/image'
 import { formatPrice } from '@/lib/utils'
 import AddToCartButton from '@/components/store/AddToCartButton'
 import { MessageCircle } from 'lucide-react'
-
-export const dynamic = 'force-dynamic'
+import {
+  getCachedBusinessSettings,
+  getCachedCategories,
+  getCachedFeaturedFoods,
+  getCachedPopularFoods
+} from '@/lib/db-cache'
 
 function FoodCard({ food, categoryName }: { food: any, categoryName: string }) {
   return (
@@ -75,30 +78,13 @@ function FoodCard({ food, categoryName }: { food: any, categoryName: string }) {
 }
 
 export default async function HomePage() {
-  const settings = await prisma.businessSettings.findFirst()
+  const [settings, categories, featuredFoods, popularFoods] = await Promise.all([
+    getCachedBusinessSettings(),
+    getCachedCategories(),
+    getCachedFeaturedFoods(),
+    getCachedPopularFoods(),
+  ])
   const canOrder = settings?.isAcceptingOrders ?? true
-
-  const categories = await prisma.category.findMany({
-    where: { isActive: true },
-    include: {
-      _count: {
-        select: { foods: { where: { isAvailable: true } } }
-      }
-    },
-    orderBy: { sortOrder: 'asc' }
-  })
-
-  const featuredFoods = await prisma.food.findMany({
-    where: { isFeatured: true, isAvailable: true, category: { isActive: true } },
-    include: { category: true },
-    take: 6
-  })
-
-  const popularFoods = await prisma.food.findMany({
-    where: { isPopular: true, isAvailable: true, category: { isActive: true } },
-    include: { category: true },
-    take: 8
-  })
 
   const heroImageFood = featuredFoods.find(f => f.imageUrl)
 

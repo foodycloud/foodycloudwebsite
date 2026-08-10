@@ -54,6 +54,9 @@ export async function PUT(request: NextRequest) {
       data: parsed.data,
     })
 
+    const { revalidateTag } = await import('next/cache')
+    revalidateTag('homepage-settings')
+
     return NextResponse.json({ settings: updated })
   } catch (error) {
     return NextResponse.json({ error: 'Failed to update homepage settings' }, { status: 500 })

@@ -44,6 +44,9 @@ export async function PUT(request: NextRequest) {
       },
     })
 
+    const { revalidateTag } = await import('next/cache')
+    revalidateTag('business-settings')
+
     return NextResponse.json({ settings: updated })
   } catch (error) {
     console.error('PUT /api/admin/settings error:', error)

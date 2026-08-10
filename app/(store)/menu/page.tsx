@@ -1,8 +1,6 @@
-import { prisma } from '@/lib/prisma'
 import type { Metadata } from 'next'
 import MenuClient from '@/components/store/MenuClient'
-
-export const dynamic = 'force-dynamic'
+import { getCachedMenuData, getCachedBusinessSettings } from '@/lib/db-cache'
 
 export const metadata: Metadata = {
   title: 'Menu',
@@ -11,17 +9,8 @@ export const metadata: Metadata = {
 
 export default async function MenuPage() {
   const [categories, settings] = await Promise.all([
-    prisma.category.findMany({
-      where: { isActive: true },
-      include: {
-        foods: {
-          where: { isDeleted: false },
-          orderBy: { sortOrder: 'asc' },
-        },
-      },
-      orderBy: { sortOrder: 'asc' },
-    }),
-    prisma.businessSettings.findFirst(),
+    getCachedMenuData(),
+    getCachedBusinessSettings(),
   ])
 
   const formattedCategories = categories.map((cat) => ({

@@ -59,12 +59,17 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       include: { category: { select: { id: true, name: true } } },
     })
 
+    const { revalidateTag } = await import('next/cache')
+    revalidateTag('foods')
+
     return NextResponse.json({ food })
   } catch (error) {
     console.error('PUT /api/admin/foods/[id] error:', error)
     return NextResponse.json({ error: 'Failed to update food' }, { status: 500 })
   }
 }
+
+export const PATCH = PUT
 
 export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -76,6 +81,9 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
       where: { id: params.id },
       data: { isDeleted: true, isAvailable: false },
     })
+
+    const { revalidateTag } = await import('next/cache')
+    revalidateTag('foods')
 
     return NextResponse.json({ success: true, message: 'Food removed successfully' })
   } catch (error) {

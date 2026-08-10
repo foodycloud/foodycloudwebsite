@@ -44,6 +44,9 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    const { revalidateTag } = await import('next/cache')
+    revalidateTag('categories')
+
     return NextResponse.json({ category }, { status: 201 })
   } catch (error) {
     console.error('POST /api/admin/categories error:', error)

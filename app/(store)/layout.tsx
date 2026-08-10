@@ -7,30 +7,27 @@ import StoreFooter from '@/components/store/StoreFooter'
 import { CartProvider } from '@/context/CartContext'
 import { Toaster } from 'react-hot-toast'
 import CinematicIntro from '@/components/store/CinematicIntro'
-import { prisma } from '@/lib/prisma'
+import { getCachedHomepageSettings } from '@/lib/db-cache'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' })
 
 export const metadata: Metadata = {
-  title: { default: 'Foody Cloud - Pure Veg Home Kitchen', template: '%s | Foody Cloud' },
-  description: 'Freshly cooked vegetarian meals from Foody Cloud. Browse the menu and order through WhatsApp while prepaid checkout is being prepared.',
-  keywords: ['foody cloud', 'pure veg', 'home kitchen', 'kolupukur', 'chinar park', 'homemade food', 'vegetarian', 'food delivery'],
-  icons: {
-    icon: '/logo.png',
-    apple: '/logo.png',
+  title: {
+    default: 'Foody Cloud | Homely Taste, Every Time',
+    template: '%s | Foody Cloud',
   },
+  description: 'Pure vegetarian home kitchen based in Chinar Park, Kolupukur. Delivering fresh, hygienic, and delicious homestyle meals across Kolkata.',
+  keywords: ['foody cloud', 'veg home kitchen kolkata', 'chinar park home food', 'vegetarian delivery kolkata'],
   openGraph: {
-    siteName: 'Foody Cloud',
-    title: 'Foody Cloud - Pure Veg Home Kitchen',
-    description: 'Freshly cooked, purely homemade vegetarian food.',
+    title: 'Foody Cloud | Homely Taste, Every Time',
+    description: 'Pure veg home kitchen delivering fresh, hygienic, and delicious homestyle meals in Kolkata.',
     type: 'website',
-    images: [{ url: '/logo.png', width: 512, height: 512, alt: 'Foody Cloud' }],
   },
 }
 
 export default async function StoreLayout({ children }: { children: ReactNode }) {
-  const homepageSettings = await prisma.homepageSettings.findFirst()
+  const homepageSettings = await getCachedHomepageSettings()
 
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>

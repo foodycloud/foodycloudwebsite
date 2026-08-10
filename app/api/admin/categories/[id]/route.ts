@@ -25,12 +25,17 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       data: updateData,
     })
 
+    const { revalidateTag } = await import('next/cache')
+    revalidateTag('categories')
+
     return NextResponse.json({ category })
   } catch (error) {
     console.error('PUT /api/admin/categories/[id] error:', error)
     return NextResponse.json({ error: 'Failed to update category' }, { status: 500 })
   }
 }
+
+export const PATCH = PUT
 
 export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -49,6 +54,10 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
     }
 
     await prisma.category.delete({ where: { id: params.id } })
+
+    const { revalidateTag } = await import('next/cache')
+    revalidateTag('categories')
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('DELETE /api/admin/categories/[id] error:', error)

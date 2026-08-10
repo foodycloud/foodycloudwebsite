@@ -89,6 +89,9 @@ export async function POST(request: NextRequest) {
       include: { category: { select: { id: true, name: true } } },
     })
 
+    const { revalidateTag } = await import('next/cache')
+    revalidateTag('foods')
+
     return NextResponse.json({ food }, { status: 201 })
   } catch (error) {
     console.error('POST /api/admin/foods error:', error)
