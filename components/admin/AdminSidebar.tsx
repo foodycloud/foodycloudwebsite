@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, ShoppingBag, UtensilsCrossed, Tag, Percent,
@@ -28,8 +29,13 @@ export default function AdminSidebar() {
       {/* Logo */}
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-amber-100 rounded-lg flex items-center justify-center">
-            <span className="text-lg">🍲</span>
+          <div className="relative w-9 h-9 shrink-0">
+            <Image
+              src="/logo.png"
+              alt="Foody Cloud logo"
+              fill
+              className="object-contain"
+            />
           </div>
           <div>
             <p className="font-bold text-gray-900 text-sm leading-tight">Foody Cloud</p>

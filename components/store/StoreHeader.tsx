@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Menu, MessageCircle, ShoppingBag, X } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
@@ -21,9 +22,15 @@ export default function StoreHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-stone-200/70 bg-[#fffaf1]/90 backdrop-blur-xl">
       <div className="container-page h-[72px] flex items-center justify-between gap-4">
-        <Link href="/" className="focus-ring flex items-center gap-3 rounded-md">
-          <div className="grid h-10 w-10 place-items-center rounded-lg bg-stone-950 text-sm font-black tracking-tight text-amber-300 shadow-sm">
-            FC
+        <Link href="/" className="focus-ring flex items-center gap-2.5 rounded-md">
+          <div className="relative h-10 w-10 shrink-0">
+            <Image
+              src="/logo.png"
+              alt="Foody Cloud logo"
+              fill
+              className="object-contain"
+              priority
+            />
           </div>
           <div className="leading-tight">
             <p className="font-display text-xl font-bold text-stone-950">Foody Cloud</p>

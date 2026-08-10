@@ -14,11 +14,16 @@ export const metadata: Metadata = {
   title: { default: 'Foody Cloud - Pure Veg Home Kitchen', template: '%s | Foody Cloud' },
   description: 'Freshly cooked vegetarian meals from Foody Cloud. Browse the menu and order through WhatsApp while prepaid checkout is being prepared.',
   keywords: ['foody cloud', 'pure veg', 'home kitchen', 'kolupukur', 'chinar park', 'homemade food', 'vegetarian', 'food delivery'],
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
   openGraph: {
     siteName: 'Foody Cloud',
     title: 'Foody Cloud - Pure Veg Home Kitchen',
     description: 'Freshly cooked, purely homemade vegetarian food.',
     type: 'website',
+    images: [{ url: '/logo.png', width: 512, height: 512, alt: 'Foody Cloud' }],
   },
 }
 

@@ -43,8 +43,14 @@ export default function AdminLoginPage() {
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">🍲</span>
+          <div className="relative w-20 h-20 mx-auto mb-4">
+            <Image
+              src="/logo.png"
+              alt="Foody Cloud logo"
+              fill
+              className="object-contain"
+              priority
+            />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Foody Cloud</h1>
           <p className="text-gray-500 text-sm mt-1">Admin Dashboard</p>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Clock, Instagram, MapPin, MessageCircle, Phone } from 'lucide-react'
 import { WHATSAPP_DISPLAY, getWhatsAppUrl } from '@/lib/storefront'
 
@@ -8,7 +9,14 @@ export default function StoreFooter() {
       <div className="container-page grid gap-10 py-12 md:grid-cols-[1.2fr_1fr_1fr]">
         <div>
           <div className="mb-4 flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-lg bg-amber-400 text-sm font-black text-stone-950">FC</div>
+            <div className="relative h-11 w-11 shrink-0">
+              <Image
+                src="/logo.png"
+                alt="Foody Cloud logo"
+                fill
+                className="object-contain"
+              />
+            </div>
             <div>
               <p className="font-display text-xl font-bold text-white">Foody Cloud</p>
               <p className="text-xs uppercase tracking-[0.18em] text-stone-500">Pure veg home kitchen</p>
