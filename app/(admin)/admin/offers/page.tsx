@@ -103,13 +103,13 @@ export default async function OffersPage() {
                 {/* Discount Details */}
                 <div className="mb-6 space-y-1">
                   <p className={`text-3xl font-black ${status.label === 'Active' ? 'bg-gradient-to-r from-amber-600 to-amber-500 bg-clip-text text-transparent' : 'text-gray-900'}`}>
-                    {formatDiscount(offer.type, offer.value)}
+                    {formatDiscount(offer.type, parseFloat(offer.value.toString()))}
                   </p>
-                  {offer.minOrderValue && offer.minOrderValue > 0 && (
-                    <p className="text-sm font-medium text-gray-500">Min order {formatPrice(offer.minOrderValue)}</p>
+                  {offer.minOrderValue && Number(offer.minOrderValue) > 0 && (
+                    <p className="text-sm font-medium text-gray-500">Min order {formatPrice(offer.minOrderValue.toString())}</p>
                   )}
-                  {offer.type === 'PERCENTAGE' && offer.maxDiscount && offer.maxDiscount > 0 && (
-                    <p className="text-sm font-medium text-gray-500">Max discount cap {formatPrice(offer.maxDiscount)}</p>
+                  {offer.type === 'PERCENTAGE' && offer.maxDiscount && Number(offer.maxDiscount) > 0 && (
+                    <p className="text-sm font-medium text-gray-500">Max discount cap {formatPrice(offer.maxDiscount.toString())}</p>
                   )}
                 </div>
 
@@ -136,7 +136,7 @@ export default async function OffersPage() {
                 </div>
 
                 <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
-                  <OfferToggle offerId={offer.id} initialStatus={offer.isActive} />
+                  <OfferToggle offerId={offer.id} initialActive={offer.isActive} />
                   <Link
                     href={`/admin/offers/${offer.id}/edit`}
                     className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
