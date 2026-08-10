@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import BusinessSettingsForm from '@/components/admin/BusinessSettingsForm'
 
+export const dynamic = 'force-dynamic'
+
 export default async function SettingsPage() {
   let settings = await prisma.businessSettings.findFirst()
   if (!settings) {

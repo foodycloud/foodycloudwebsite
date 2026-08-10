@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma'
 import type { Metadata } from 'next'
 import MenuClient from '@/components/store/MenuClient'
 
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Menu',

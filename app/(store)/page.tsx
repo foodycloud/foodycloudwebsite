@@ -5,7 +5,7 @@ import { formatPrice } from '@/lib/utils'
 import AddToCartButton from '@/components/store/AddToCartButton'
 import { Leaf, Clock, Truck, Star } from 'lucide-react'
 
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'Foody Cloud — Pure Veg Home Kitchen | Order Online',
