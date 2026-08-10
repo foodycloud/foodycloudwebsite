@@ -6,6 +6,7 @@ import StoreHeader from '@/components/store/StoreHeader'
 import StoreFooter from '@/components/store/StoreFooter'
 import { CartProvider } from '@/context/CartContext'
 import { Toaster } from 'react-hot-toast'
+import CinematicIntro from '@/components/store/CinematicIntro'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' })
@@ -30,8 +31,22 @@ export const metadata: Metadata = {
 export default function StoreLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                if (localStorage.getItem('introCompleted') !== 'true' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                  document.documentElement.classList.add('intro-active');
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
       <body className="font-body text-stone-950 antialiased">
         <CartProvider>
+          <CinematicIntro />
           <StoreHeader />
           <main>{children}</main>
           <StoreFooter />
