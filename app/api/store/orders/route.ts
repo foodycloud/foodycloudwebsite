@@ -93,8 +93,10 @@ export async function POST(request: NextRequest) {
         where: {
           code: offerCode,
           isActive: true,
-          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-          OR: [{ startsAt: null }, { startsAt: { lte: new Date() } }],
+          AND: [
+            { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+            { OR: [{ startsAt: null }, { startsAt: { lte: new Date() } }] },
+          ],
         },
       })
       if (offer) {
