@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Camera, Loader2 } from 'lucide-react';
+import { Camera, Loader2, Upload, Trash2 } from 'lucide-react';
 
 interface FoodData {
   id?: string;
@@ -34,6 +34,7 @@ interface Props {
 export default function FoodForm({ categories, initialData, foodId }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   
   const [formData, setFormData] = useState<FoodData>({
     name: initialData?.name || '',
@@ -60,6 +61,73 @@ export default function FoodForm({ categories, initialData, foodId }: Props) {
 
   const handleToggle = (field: keyof FoodData) => {
     setFormData({ ...formData, [field]: !formData[field] });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Please upload a web-optimized image format (WebP, AVIF, PNG, or JPEG).');
+      return;
+    }
+
+    setUploading(true);
+    const loadingToast = toast.loading('Uploading image asset...');
+
+    try {
+      const sigRes = await fetch('/api/admin/media', { method: 'POST' });
+      if (!sigRes.ok) throw new Error('Failed to get upload signature');
+      const sigData = await sigRes.json();
+
+      const formDataPayload = new FormData();
+      formDataPayload.append('file', file);
+      formDataPayload.append('api_key', sigData.api_key);
+      formDataPayload.append('timestamp', sigData.timestamp);
+      formDataPayload.append('signature', sigData.signature);
+      formDataPayload.append('folder', sigData.folder);
+
+      const cleanSlug = formData.name ? formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'food-photo';
+      formDataPayload.append('public_id', `menu-${cleanSlug}-${Date.now()}`);
+
+      const uploadRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${sigData.cloud_name}/image/upload`,
+        { method: 'POST', body: formDataPayload }
+      );
+      if (!uploadRes.ok) throw new Error('Cloudinary upload request failed');
+      const uploadData = await uploadRes.json();
+
+      if (!uploadData.secure_url) {
+        throw new Error('Image secure URL not found');
+      }
+
+      setFormData(prev => ({ ...prev, imageUrl: uploadData.secure_url }));
+      toast.success('Image uploaded successfully!', { id: loadingToast });
+
+      await fetch('/api/admin/media', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: uploadData.secure_url,
+          publicId: uploadData.public_id,
+          filename: file.name,
+          width: uploadData.width,
+          height: uploadData.height,
+          sizeBytes: file.size
+        }),
+      });
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || 'Image upload failed', { id: loadingToast });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData(prev => ({ ...prev, imageUrl: '' }));
+    toast.success('Image removed from form');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -101,36 +169,67 @@ export default function FoodForm({ categories, initialData, foodId }: Props) {
       {/* Image Section */}
       <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
         <h2 className="text-xl font-bold text-gray-900 mb-2">Food Photo</h2>
-        <p className="text-gray-500 mb-6">Paste any image URL from Google, Unsplash, or any website</p>
+        <p className="text-gray-500 mb-6">Upload a photo from your computer or paste an image URL</p>
         
-        <div className="space-y-4">
-          <input
-            type="url"
-            name="imageUrl"
-            value={formData.imageUrl || ''}
-            onChange={handleChange}
-            placeholder="https://..."
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all text-gray-900"
-          />
-          <p className="text-sm text-gray-400">
-            💡 Tip: Search on Google Images, right-click → Copy image address
+        <div className="space-y-6">
+          {/* File Upload Selector */}
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <label className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 text-white px-5 py-3 rounded-xl text-sm font-semibold transition cursor-pointer select-none">
+              {uploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4" />
+                  Upload Local File
+                </>
+              )}
+              <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" disabled={uploading} />
+            </label>
+            <span className="text-gray-400 text-sm font-medium">or</span>
+            <div className="flex-1 w-full">
+              <input
+                type="url"
+                name="imageUrl"
+                value={formData.imageUrl || ''}
+                onChange={handleChange}
+                placeholder="Paste image URL (https://...)"
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all text-gray-900 text-sm"
+              />
+            </div>
+          </div>
+          
+          <p className="text-xs text-gray-400">
+            💡 Acceptable formats: WebP, AVIF, PNG, JPEG. Paste URLs from Google Images or upload local files.
           </p>
 
-          <div className="relative h-64 w-full md:w-96 rounded-2xl overflow-hidden border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+          <div className="relative h-64 w-full md:w-96 rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50">
             {formData.imageUrl && formData.imageUrl.startsWith('http') ? (
-              <img
-                src={formData.imageUrl}
-                alt="Preview"
-                className="h-full w-full object-cover rounded-xl"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                  (e.target as HTMLImageElement).parentElement?.classList.add('flex', 'items-center', 'justify-center');
-                }}
-              />
+              <>
+                <img
+                  src={formData.imageUrl}
+                  alt="Preview"
+                  className="h-full w-full object-cover rounded-xl"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                    (e.target as HTMLImageElement).parentElement?.classList.add('flex', 'items-center', 'justify-center');
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="absolute top-3 right-3 bg-red-600 hover:bg-red-700 text-white p-2 rounded-xl transition shadow-sm z-10"
+                  title="Remove Image"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </>
             ) : (
               <div className="text-center">
                 <Camera className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                <span className="text-gray-400 font-medium">No image yet</span>
+                <span className="text-gray-400 font-medium">No image uploaded</span>
               </div>
             )}
           </div>
