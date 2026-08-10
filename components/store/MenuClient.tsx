@@ -208,7 +208,15 @@ export default function MenuClient({ categories, isOpen, closedMessage }: Props)
                           </div>
                           
                           {food.isAvailable ? (
-                            <AddToCartButton food={food} compact={false} />
+                            <AddToCartButton
+                              food={{
+                                foodId: food.id,
+                                name: food.name,
+                                price: food.discountPrice || food.price,
+                                imageUrl: food.imageUrl,
+                                categoryName: category.name,
+                              }}
+                            />
                           ) : (
                             <span className="text-sm font-medium text-red-500 px-3 py-1.5 bg-red-50 rounded-lg">
                               Unavailable

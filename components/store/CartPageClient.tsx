@@ -32,15 +32,10 @@ export default function CartPageClient() {
     setCouponError('')
     
     try {
-      // simulate network request
-      await new Promise(resolve => setTimeout(resolve, 600))
-      
-      const success = applyCoupon(couponInput, subtotal)
-      if (!success) {
-        setCouponError('Invalid coupon code or not applicable to current total.')
-      } else {
-        setCouponInput('')
-      }
+      await applyCoupon(couponInput, subtotal)
+      setCouponInput('')
+    } catch {
+      setCouponError('Invalid coupon code or not applicable to current total.')
     } finally {
       setCouponLoading(false)
     }
@@ -77,7 +72,7 @@ export default function CartPageClient() {
 
             <div className="flex flex-col gap-4">
               {items.map((item) => (
-                <div key={item.id} className="bg-white rounded-2xl p-4 border border-stone-200 shadow-sm flex items-center gap-4 group transition-all">
+                <div key={item.foodId} className="bg-white rounded-2xl p-4 border border-stone-200 shadow-sm flex items-center gap-4 group transition-all">
                   <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-stone-50 shrink-0">
                     {item.imageUrl ? (
                       <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
@@ -95,7 +90,7 @@ export default function CartPageClient() {
 
                   <div className="flex items-center gap-3 bg-stone-50 rounded-full p-1 border border-stone-200">
                     <button 
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      onClick={() => updateQuantity(item.foodId, item.quantity - 1)}
                       className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-stone-600 hover:text-amber-600 hover:bg-amber-50 shadow-sm transition-colors"
                       disabled={item.quantity <= 1}
                     >
@@ -105,7 +100,7 @@ export default function CartPageClient() {
                       {item.quantity}
                     </span>
                     <button 
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      onClick={() => updateQuantity(item.foodId, item.quantity + 1)}
                       className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-stone-600 hover:text-amber-600 hover:bg-amber-50 shadow-sm transition-colors"
                     >
                       <Plus className="w-4 h-4" />
@@ -117,7 +112,7 @@ export default function CartPageClient() {
                   </div>
 
                   <button 
-                    onClick={() => removeItem(item.id)}
+                    onClick={() => removeItem(item.foodId)}
                     className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors ml-2"
                     aria-label="Remove item"
                   >
@@ -145,7 +140,7 @@ export default function CartPageClient() {
 
             <div className="flex flex-col gap-3 text-sm">
               {items.map(item => (
-                <div key={item.id} className="flex justify-between text-stone-600">
+                <div key={item.foodId} className="flex justify-between text-stone-600">
                   <span className="truncate pr-4">{item.quantity}x {item.name}</span>
                   <span className="font-medium shrink-0">{formatPrice(item.price * item.quantity)}</span>
                 </div>
@@ -160,7 +155,7 @@ export default function CartPageClient() {
                 <Tag className="w-4 h-4 text-amber-500" /> Have a coupon?
               </h3>
               
-              {!coupon ? (
+              {!coupon.isValid ? (
                 <form onSubmit={handleApplyCoupon} className="flex flex-col gap-2">
                   <div className="flex gap-2">
                     <input
@@ -178,7 +173,9 @@ export default function CartPageClient() {
                       {couponLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
                     </button>
                   </div>
-                  {couponError && <p className="text-red-500 text-xs">{couponError}</p>}
+                  {(couponError || coupon.message) && !coupon.isValid && (
+                    <p className="text-red-500 text-xs">{couponError || coupon.message}</p>
+                  )}
                 </form>
               ) : (
                 <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex flex-col gap-2 relative">
@@ -208,7 +205,7 @@ export default function CartPageClient() {
                 <span className="font-medium">{formatPrice(subtotal)}</span>
               </div>
               
-              {coupon && (
+              {coupon.isValid && (
                 <div className="flex justify-between text-green-600 font-medium">
                   <span>Discount ({coupon.code})</span>
                   <span>- {formatPrice(coupon.discount)}</span>

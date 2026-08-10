@@ -53,25 +53,23 @@ export default function CheckoutClient() {
     
     // Prepare data for WhatsApp message
     const orderData = {
-      items: items.map(item => ({
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price
-      })),
-      totalAmount: subtotal,
-      customerName: formData.name,
-      customerPhone: formData.phone,
-      deliveryType: formData.deliveryType,
-      address: formData.address || undefined,
-      specialRequest: formData.specialRequest || undefined,
-      couponCode: coupon?.code,
-      couponDiscount: coupon?.discount
+      items,
+      subtotal,
+      couponCode: coupon?.isValid ? coupon.code : undefined,
+      couponDiscount: coupon?.isValid ? coupon.discount : undefined,
+      customer: {
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email || undefined,
+        deliveryType: (formData.deliveryType === 'DELIVERY' ? 'HOME_DELIVERY' : 'SELF_PICKUP') as 'HOME_DELIVERY' | 'SELF_PICKUP',
+        deliveryAddress: formData.address || undefined,
+        specialRequest: formData.specialRequest || undefined,
+      },
     }
 
     const message = buildOrderWhatsAppMessage(orderData)
-    const url = getWhatsAppUrl('919007182421', message)
+    const url = getWhatsAppUrl(message)
 
-    // Clear cart and redirect
     clearCart()
     window.location.href = url
   }
@@ -190,7 +188,7 @@ export default function CheckoutClient() {
             
             <div className="max-h-[300px] overflow-y-auto pr-2 mb-4 scrollbar-hide flex flex-col gap-3">
               {items.map(item => (
-                <div key={item.id} className="flex justify-between text-sm">
+                <div key={item.foodId} className="flex justify-between text-sm">
                   <span className="text-stone-600 truncate pr-2">
                     <span className="font-bold text-stone-900">{item.quantity}x</span> {item.name}
                   </span>
@@ -209,7 +207,7 @@ export default function CheckoutClient() {
                 <span>{formatPrice(subtotal)}</span>
               </div>
               
-              {coupon && (
+              {coupon?.isValid && (
                 <div className="flex justify-between text-green-600 font-medium">
                   <span>Discount ({coupon.code})</span>
                   <span>- {formatPrice(coupon.discount)}</span>
